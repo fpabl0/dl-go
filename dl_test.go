@@ -42,6 +42,19 @@ func TestDownloadNotFound(t *testing.T) {
 	}
 }
 
+type mockProgresser struct{}
+
+func (*mockProgresser) Before() {}
+func (*mockProgresser) After()  {}
+func (*mockProgresser) Progress(progress uint64, total uint64) {
+	fmt.Printf("\r%s", strings.Repeat(" ", 35))
+	if total == 0 {
+		fmt.Printf("\rDownloading... %d complete", progress)
+	} else {
+		fmt.Printf("\rDownloading... %d/%d complete", progress, total)
+	}
+}
+
 func TestDownloadNoError(t *testing.T) {
 
 	err := os.Mkdir("./temp", os.ModePerm)
@@ -50,19 +63,10 @@ func TestDownloadNoError(t *testing.T) {
 	}
 	defer os.RemoveAll("./temp")
 
-	printProgress := func(progress uint64, total uint64) {
-		fmt.Printf("\r%s", strings.Repeat(" ", 35))
-		if total == 0 {
-			fmt.Printf("\rDownloading... %d complete", progress)
-		} else {
-			fmt.Printf("\rDownloading... %d/%d complete", progress, total)
-		}
-	}
-
 	err = Download(
 		"https://github.com/briandowns/spinner/archive/master.zip",
 		"./temp/archive.zip",
-		printProgress,
+		&mockProgresser{},
 	)
 	assert.Nil(t, err)
 	f, err := os.Stat("./temp/archive.zip")

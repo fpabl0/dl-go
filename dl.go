@@ -2,7 +2,6 @@ package dl
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -10,7 +9,7 @@ import (
 )
 
 // Download downloads a file
-func Download(url string, dst string, printProgress PrintProgressFunc) error {
+func Download(url string, dst string, progresser ProgressPrinter) error {
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -33,16 +32,20 @@ func Download(url string, dst string, printProgress PrintProgressFunc) error {
 		size = 0
 	}
 
+	if progresser != nil {
+		progresser.Before()
+	}
+
 	pw := &progressWriter{Total: uint64(size)}
-	pw.PrintProgress = printProgress
+	if progresser != nil {
+		pw.PrintProgress = progresser.Progress
+	}
 	if _, err = io.Copy(out, io.TeeReader(resp.Body, pw)); err != nil {
 		return err
 	}
 
-	if printProgress != nil {
-		// The progress use the same line so print a new
-		// line once it's finished downloading
-		fmt.Print("\n")
+	if progresser != nil {
+		progresser.After()
 	}
 
 	return nil

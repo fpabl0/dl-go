@@ -8,7 +8,11 @@ import (
 	"github.com/fpabl0/dl-go"
 )
 
-func printProgress(progress uint64, total uint64) {
+type progresser struct{}
+
+func (*progresser) Before() { fmt.Println("Start download") }
+func (*progresser) After()  { fmt.Println("\nFinish download") }
+func (*progresser) Progress(progress uint64, total uint64) {
 	fmt.Printf("\r%s", strings.Repeat(" ", 35))
 	if total == 0 {
 		fmt.Printf("\rDownloading... %d complete", progress)
@@ -21,7 +25,7 @@ func main() {
 	err := dl.Download(
 		"https://github.com/briandowns/spinner/archive/master.zip",
 		"./archive.zip",
-		printProgress,
+		&progresser{},
 	)
 
 	if err != nil {
